@@ -42,7 +42,7 @@ class DiagnosisController extends AppController
             $diagnosis = $this->paginate($this->Diagnosis);
         }else{//for anoter user
             $user = $this->Auth->user('id');
-            $data = $this->Diagnosis->find('all')->where(['diagnosis.user_id'=> $user]);
+            $data = $this->Diagnosis->find('all')->where(['Diagnosis.user_id'=> $user]);
             $this->paginate = [
                 'contain' => ['Users'],
             ];
@@ -122,7 +122,7 @@ class DiagnosisController extends AppController
             $this->paginate = [
                 'contain' => ['Users'],
             ];
-            $data = $this->Diagnosis->find('all')->where(['diagnosis.department_id' => $num]);
+            $data = $this->Diagnosis->find('all')->where(['Diagnosis.department_id' => $num]);
             $diagnosis = $this->paginate($data);
         }
         $this->set(compact('diagnosis'));
@@ -147,7 +147,7 @@ class DiagnosisController extends AppController
                 $this->paginate = [
                     'contain' => ['Users'],
                 ];
-                $data = $this->Diagnosis->find('all')->where(['diagnosis.user_id'=> $user_id]);
+                $data = $this->Diagnosis->find('all')->where(['Diagnosis.user_id'=> $user_id]);
                 $diagnosis = $this->paginate($data);
             }else{
                     $this->Flash->error(__('There are no members with this number.'));
