@@ -42,7 +42,10 @@ class DiagnosisController extends AppController
             $diagnosis = $this->paginate($this->Diagnosis);
         }else{//for anoter user
             $user = $this->Auth->user('id');
-            $data = $this->Diagnosis->find('all')->where(['user_id'=> $user]);
+            $data = $this->Diagnosis->find('all')->where(['diagnosis.user_id'=> $user]);
+            $this->paginate = [
+                'contain' => ['Users'],
+            ];
             $diagnosis = $this->paginate($data);
         }
         $this->set(compact('diagnosis'));
@@ -53,7 +56,6 @@ class DiagnosisController extends AppController
         $diagnosis = $this->Diagnosis->get($id, [
             'contain' => ['Users'],
         ]);
-
         $this->set('diagnosis', $diagnosis);
     }
 
@@ -110,7 +112,6 @@ class DiagnosisController extends AppController
         } else {
             $this->Flash->error(__('The diagnosis could not be deleted. Please, try again.'));
         }
-
         return $this->redirect(['action' => 'index']);
     }
 

@@ -1,20 +1,19 @@
-<?php
-/**
- * @var \App\View\AppView $this
- * @var \Cake\Datasource\EntityInterface $diagnosis
- */
-?>
 
-<div class="diagnosis view large-9 medium-8 columns content">
+<div class="container">
     <h3><?= h($diagnosis->id) ?></h3>
     <table class="vertical-table">
         <tr>
-            <th scope="row"><?= __('User') ?></th>
-            <td><?= $diagnosis->has('user') ? $this->Html->link($diagnosis->user->name, ['controller' => 'Users', 'action' => 'view', $diagnosis->user->id]) : '' ?></td>
+            <th scope="row"><?= __('Table Id') ?></th>
+            <td><?= $this->Number->format($diagnosis->id) ?></td>
+        </tr>
+        
+        <tr>
+            <th scope="row"><?= __('User Number') ?></th>
+            <td><?=  $this->Number->format($diagnosis->user->user_num)?></td>
         </tr>
         <tr>
-            <th scope="row"><?= __('Id') ?></th>
-            <td><?= $this->Number->format($diagnosis->id) ?></td>
+            <th scope="row"><?= __('User Name') ?></th>
+            <td><?=  $diagnosis->user->name?></td>
         </tr>
         <tr>
             <th scope="row"><?= __('Department Id') ?></th>
