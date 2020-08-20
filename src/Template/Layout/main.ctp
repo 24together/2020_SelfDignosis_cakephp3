@@ -13,12 +13,13 @@ $cakeDescription = 'self-dignostics';
     <?= $this->Html->meta('icon') ?>
     <?= $this->element('script') ?>
     <?= $this->fetch('meta') ?>
+    <?= $this->Html->css('index.css') ?>
 </head>
 <body>
     <!-- main-->
-    <div class="container " style="margin-top:200px" >
+    <div class="container " id ="main_container" >
         <?=$this->element('logo')?>
-        <div style="margin-top:30px">
+        <div class="sidebar">
             <?= $this->element('sidebar') ?>
         </div>
         <?= $this->Flash->render() ?>

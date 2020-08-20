@@ -3,12 +3,14 @@ namespace App\Model\Table;
 
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
+use Cake\Core\Configure;
+use Cake\Core\Configure\Engine\PhpConfig;
 
 class DiagnosisTable extends Table
 {
     public function initialize(array $config){
-        $this->table('diagnosis');
-        $this->PrimaryKey('id');
+        $this->setTable('diagnosis');
+        $this->setPrimaryKey('id');
         $this->addBehavior('Timestamp');
 
         //set association
@@ -35,6 +37,7 @@ class DiagnosisTable extends Table
         //This function checks if the writing is user's.
         return $this->exists(['id'=> $id, 'user_id'=>$userId]);
     }
+
 }
 
 ?>

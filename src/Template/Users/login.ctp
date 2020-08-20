@@ -1,8 +1,8 @@
 <div class="container">
-    <h3 style="margin-top:40px;text-align:center">Sign in!</h3>
+    <h3 class="information">Sign in!</h3>
     <?= $this->Flash->render() ?>
     <?= $this->Form->create();?>
-        <div class="container" style="width:600px">
+        <div class="container" id="user_container">
             <div class="form-group">
                 <?= $this->Form->control('user_id', ['type' => 'text', 'class' => 'form-control', 'placeholder' => 'Your ID']);?>
             </div>

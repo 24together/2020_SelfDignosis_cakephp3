@@ -1,7 +1,7 @@
 <div class="users form">
     <?= $this->Form->create();?>
-        <h3 style="margin-top:40px;text-align:center">Sign up!</h3>
-        <div class="container" style="width:600px">
+        <h3 class="information">Sign up!</h3>
+        <div class="container" id="user_container">
             <div class="form-group">
                 <?= $this->Form->text('user_id', ['class' => 'form-control', 'placeholder' => 'Your Id']);?>
             </div>
@@ -12,10 +12,10 @@
                 <?= $this->Form->text('name', ['class' => 'form-control', 'placeholder' => 'Your Name']);?>
             </div>
             <div class="form-group">
-                <span style="display:inline-block;">
+                <span class="inline_block_left">
                     <p>Your Department</p>
                 </span>
-                <span style="display:inline-block;">
+                <span class="inline_block_left">
                     <?= $this->Form->radio('department_id', [
                             ['value' => '1', 'text' => '管理者'],
                             ['value' => '2', 'text' => '個人'],
