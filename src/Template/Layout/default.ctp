@@ -13,7 +13,7 @@ $cakeDescription = 'self-dignostics';
     <?= $this->Html->meta('icon') ?>
     <?= $this->element('script') ?>
     <?= $this->fetch('meta') ?>
-    
+    <?= $this->Html->css('index.css') ?>
 </head>
 <body>
     <!-- main -->

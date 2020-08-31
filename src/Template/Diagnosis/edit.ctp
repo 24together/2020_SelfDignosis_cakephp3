@@ -1,17 +1,18 @@
-<div class="container" style="width:600px">
+<div class="container" id="user_container">
 <!-- form start -->  
     <?= $this->Form->create($diagnosis) ?>
     <fieldset>
         <p>自己診断表を修正してください！</p>  
         <div class = "form-group">
-            <span style="display:inline-block;">
+            <span class="inline_block_left">
                 <p>tiredness</p>
             </span>
-            <span style="display:inline-block;margin-left:40px">
+            <span class="inline_block_right">
                 <?= $this->Form->radio('tiredness', [
-                        ['value' => '0', 'text' => 'good'],
-                        ['value' => '1', 'text' => 'nomal'],
-                        ['value' => '3', 'text' => 'bad']
+                        ['value' => Configure::read('int_symptoms.tiredness.select.GOOD.NUMBER'), 'text' => Configure::read('int_symptoms.tiredness.select.GOOD.jp')],
+                        ['value' => Configure::read('int_symptoms.tiredness.select.NOMAL.NUMBER'), 'text' => Configure::read('int_symptoms.tiredness.select.NOMAL.jp')],
+                        ['value' => Configure::read('int_symptoms.tiredness.select.BAD.NUMBER'), 'text' => Configure::read('int_symptoms.tiredness.select.BAD.jp')]
+
                 ]);?>
             </span>        
         </div>

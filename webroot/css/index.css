@@ -1,0 +1,45 @@
+.center {
+    text-align: center;
+}
+.emphasize{
+    text-align:center;
+    background-color:#F78181;
+    font-weight:bold
+}
+#checkbox{
+    display: inline-block;
+    color: #2196f3;
+}
+#right{
+    text-align: right;
+}
+#width_30px{
+    width:30px;
+}
+#width_60px{
+    width:60px;
+}
+.inline_block_left{
+    display:inline-block;
+}
+.inline_block_right{
+    display:inline-block;
+    margin-left:40px;
+}
+#black_link{
+    color: black;
+    text-decoration: none;
+}
+.sidebar{
+    margin-top:30px
+}
+#main_container{
+    margin-top:200px;
+}
+#user_container{
+    width:600px
+}
+.information{
+    margin-top:40px;
+    text-align:center
+}

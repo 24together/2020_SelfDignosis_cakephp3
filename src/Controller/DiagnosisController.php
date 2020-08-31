@@ -3,6 +3,8 @@ namespace App\Controller;
 
 use App\Controller\AppController;
 use Cake\Event\Event;
+use Cake\Core\Configure;
+use Cake\Core\Configure\Engine\PhpConfig;
 
 class DiagnosisController extends AppController
 {
@@ -10,8 +12,9 @@ class DiagnosisController extends AppController
     {
         //default deny
         parent::beforeFilter($event);
-        $this->Auth->deny(['add','edit']);
+        $this->Auth->deny(['add','edit','filtering','export']);
         $this->set('Auth', $this->Auth);
+        $this->Auth->allow(['viewSession']);
     }
 
     public function isAuthorized($user)
@@ -31,15 +34,18 @@ class DiagnosisController extends AppController
     }
     
     public function index()
-    {
+    { 
         //For ordinary users who are not managers, only their own writings can be viewed.
         $department_id = $this->Auth->user('department_id');
 
-        if($department_id ==1){//for managers
+        $session = $this->request->getSession();
+        if($department_id ==Configure::read('DEPARTMENT.MANAGER.NUMBER')){//for managers
             $this->paginate = [
                 'contain' => ['Users'],
             ];
             $diagnosis = $this->paginate($this->Diagnosis);
+            if($this->Auth->user('department_id')==Configure::read('DEPARTMENT.MANAGER.NUMBER')){
+                $session->write('Diagnosis.data',$diagnosis);}
         }else{//for anoter user
             $user = $this->Auth->user('id');
             $data = $this->Diagnosis->find('all')->where(['Diagnosis.user_id'=> $user]);
@@ -48,6 +54,7 @@ class DiagnosisController extends AppController
             ];
             $diagnosis = $this->paginate($data);
         }
+        
         $this->set(compact('diagnosis'));
     }
 
@@ -115,46 +122,93 @@ class DiagnosisController extends AppController
         return $this->redirect(['action' => 'index']);
     }
 
-    public function departmentIndex($num){
-        //Shows information divided by department.
-        $department_id = $this->Auth->user('department_id');
-        if($department_id ==1){
-            $this->paginate = [
-                'contain' => ['Users'],
-            ];
-            $data = $this->Diagnosis->find('all')->where(['Diagnosis.department_id' => $num]);
-            $diagnosis = $this->paginate($data);
+    public function filtering(){
+        //The function to filter by symptom, user number, and department.
+        $filteringList = $this->request->getData();
+        $userNum        = $filteringList['user_num'];
+        $dataArray      = array();
+        $dataArray = $this->Diagnosis->find('all');
+        if(!empty($userNum)){
+            //If user information is entered
+            $userExists = $this->Users->exists(['Users.user_num'=>$userNum]);
+            if($userExists){
+                $userData   = $this->Users->find('all')->where(['user_num'=>$userNum])->first();
+                $userId    = $userData->id;
+                $dataArray  = $this->where(['Diagnosis.user_id'=>$userId]);
+                
+            }
         }
+        //These are the int-symptoms. When additional functions are developed later, the lines will be changed.
+        if($filteringList['tiredness']==1)     { $dataArray = $dataArray->where(['tiredness' => Configure::read('int_symptoms.tiredness.select.BAD.NUMBER')]); };
+        if($filteringList['temperature']==1)   { $dataArray = $dataArray->where(['temperature >=' => Configure::read('int_symptoms.temperature.FEVER_TEMPERATURE')]); };
+        //bol-symptoms
+        foreach(Configure::read('bol_symptoms') as $keySymptom => $symptom  ){
+            if($filteringList[$keySymptom]==1){ $dataArray = $dataArray->where([$keySymptom => true]);};
+        }
+  
+        if($filteringList['department_id']!=0){ 
+            $departmentId = (int)$filteringList['department_id'];
+            $dataArray = $dataArray->where(['Diagnosis.department_id'=>$departmentId]);
+        }
+
+        $this->paginate = [
+            'contain' => ['Users'],
+        ];
+
+        $diagnosis = $this->paginate($dataArray);
+        $session = $this->request->getSession();
+        $session->write('Diagnosis.data',$diagnosis);
         $this->set(compact('diagnosis'));
-        //set the template
         $this->viewBuilder()->template('index');
+
     }
 
-    public function search($num = null)
-    {
-        //It shows only certain users' information.
-       $num= $this->request->getData('num');
-       //check the value
-       if ($num == null){
-            $this->Flash->error(__('There are no members with this number.'));
+    public function export(){
+        //function to convert symptom list to a csv file
+        $session = $this->request->getSession();
+        $Diagnosis = $this->request->session()->read('Diagnosis.data');
+        if($Diagnosis == null){
+            $this->Flash->error(__('セッション期間が過ぎました。再検索後、もう一度実行してください。'));
             return $this->redirect(['action' => 'index']);
-       }else {
-            //shows only certain users' information.       
-            $user_data = $this->Diagnosis->Users->find('all')->where(['user_num'=>$num])->first();
-            $user_id = $user_data->id;
-            //check the value
-            if($user_id){
-                $this->paginate = [
-                    'contain' => ['Users'],
-                ];
-                $data = $this->Diagnosis->find('all')->where(['Diagnosis.user_id'=> $user_id]);
-                $diagnosis = $this->paginate($data);
-            }else{
-                    $this->Flash->error(__('There are no members with this number.'));
-            }
-            $this->set(compact('diagnosis'));
-            //set the template
-            $this->viewBuilder()->template('index');
         }
+        $resultData = array();
+        foreach($Diagnosis as $diagnosis){
+            $userData    = $this->Diagnosis->Users->find('all')->where(['id'=>$diagnosis->user_id])->first();
+            $user_num    = $userData->user_num;
+            switch($diagnosis->department_id){
+                //Output department details corresponding to number
+                case Configure::read('DEPARTMENT.MANAGER.NUMBER'):
+                    $departmentId = Configure::read('DEPARTMENT.MANAGER.jp'); break;
+                case Configure::read('DEPARTMENT.INDIVIDUAL.NUMBER'):
+                    $departmentId = Configure::read('DEPARTMENT.INDIVIDUAL.jp'); break;
+                case Configure::read('DEPARTMENT.CORPORATE_BODY.NUMBER'):
+                    $departmentId = Configure::read('DEPARTMENT.CORPORATE_BODY.jp'); break;
+            }
+            switch($diagnosis->triedness){
+                //Outputs the physical condition corresponding to the fatigue level number.
+                case Configure::read('int_symptoms.tiredness.select.GOOD.NUMBER'):
+                    $tiredness = Configure::read('int_symptoms.tiredness.select.GOOD.jp'); break;
+                case Configure::read('int_symptoms.tiredness.select.NOMAL.NUMBER'):
+                    $tiredness = Configure::read('int_symptoms.tiredness.select.NOMAL.jp'); break;
+                case Configure::read('int_symptoms.tiredness.select.BAD.NUMBER'):
+                    $tiredness = Configure::read('int_symptoms.tiredness.select.BAD.jp'); break;
+            }
+            $temperature = $diagnosis->temperature;
+            if(h($diagnosis->cough)         !=null) { $cough = 'あり';      } else{$cough = 'なし';}
+            if(h($diagnosis->muscle_pain)   !=null) { $muscle_pain = 'あり';} else{$muscle_pain = 'なし';}
+            if(h($diagnosis->headache)      !=null) { $headache = 'あり';   } else{$headache = 'なし';}
+            if(h($diagnosis->diarrhea)      !=null) { $diarrhea = 'あり';   } else{$diarrhea = 'なし';}
+            if(h($diagnosis->chest_pain)    !=null) { $chest_pain = 'あり'; } else{$chest_pain = 'なし';}
+            if(h($diagnosis->dyspnea)       !=null) { $dyspnea = 'あり';    } else{$dyspnea = 'なし';}
+                     
+            array_push($resultData,[$diagnosis->id, $user_num, $departmentId, $tiredness, $temperature, $cough, $muscle_pain, $headache, $diarrhea, $chest_pain, $dyspnea, $diagnosis->created, $diagnosis->modified]);
+        }
+        $_serialize = 'resultData';
+        $_header = ['番号','ユーザー番号','部署','疲労感','温度','咳','筋肉痛','頭痛','下痢','胸の痛み','呼吸困難','作成日','修正日'];
+
+        // $this->viewBuilder()->template('index');
+        $this->response = $this->response->withDownload('diagnosis.csv');
+        $this->viewBuilder()->setClassName('CsvView.Csv');
+        $this->set(compact('resultData','_serialize','_header'));
     }
 }

@@ -7,8 +7,8 @@ use Cake\Validation\Validator;
 class UsersTable extends Table
 {
     public function initialize(array $config){
-        $this->table('users');
-        $this->PrimaryKey('id');
+        $this->setTable('users');
+        $this->setPrimaryKey('id');
         
         //set association
         $this->hasMany('Diagnosis');
