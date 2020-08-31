@@ -127,7 +127,7 @@ class DiagnosisController extends AppController
         $filteringList = $this->request->getData();
         $userNum        = $filteringList['user_num'];
         $dataArray      = array();
-        $dataArray = $this->find('all');
+        $dataArray = $this->Diagnosis->find('all');
         if(!empty($userNum)){
             //If user information is entered
             $userExists = $this->Users->exists(['Users.user_num'=>$userNum]);
