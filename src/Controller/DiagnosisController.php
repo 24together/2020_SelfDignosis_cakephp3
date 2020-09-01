@@ -5,6 +5,12 @@ use App\Controller\AppController;
 use Cake\Event\Event;
 use Cake\Core\Configure;
 use Cake\Core\Configure\Engine\PhpConfig;
+use Cake\I18n\Date;
+use Cake\I18n\Time;
+use DateTime;
+use DatePeriod;
+use DateInterval;
+use Cake\ORM\TableRegistry;
 
 class DiagnosisController extends AppController
 {
@@ -126,21 +132,37 @@ class DiagnosisController extends AppController
         //The function to filter by symptom, user number, and department.
         $filteringList = $this->request->getData();
         $userNum        = $filteringList['user_num'];
+        
+        $session = $this->request->getSession();
+        $session->write('Diagnosis.filtering',$filteringList);
+
         $dataArray      = array();
         $dataArray = $this->Diagnosis->find('all');
-        if(!empty($userNum)){
+        if($userNum!=null){
             //If user information is entered
-            $userExists = $this->Users->exists(['Users.user_num'=>$userNum]);
+            $Users = TableRegistry::get('Users');
+
+            $userExists = $Users->exists(['Users.user_num'=>$userNum]);
             if($userExists){
-                $userData   = $this->Users->find('all')->where(['user_num'=>$userNum])->first();
-                $userId    = $userData->id;
-                $dataArray  = $this->where(['Diagnosis.user_id'=>$userId]);
+                $userData   = $Users->find('all')->where(['user_num'=>$userNum])->first();
+                $userId     = $userData->id;
+                $dataArray  = $dataArray->where(['Diagnosis.user_id'=>$userId]);
                 
-            }
+            }else {$this->Flash->error(__('Please check the user number again.'));}
         }
-        //These are the int-symptoms. When additional functions are developed later, the lines will be changed.
-        if($filteringList['tiredness']==1)     { $dataArray = $dataArray->where(['tiredness' => Configure::read('int_symptoms.tiredness.select.BAD.NUMBER')]); };
-        if($filteringList['temperature']==1)   { $dataArray = $dataArray->where(['temperature >=' => Configure::read('int_symptoms.temperature.FEVER_TEMPERATURE')]); };
+        //These are the int-symptoms. 
+        //Because the input value varies from symptom to symptom, the code should be changed appropriately if the int symptom changes.
+        if($filteringList['tiredness']!=0)     { $dataArray = $dataArray->where(['tiredness'        => $filteringList['tiredness']]); };
+        if($filteringList['temperature']!=0)   { 
+            $temperatureSelectValue = Configure::read('int_symptoms.temperature.select');
+            $filteredTemperature    = $temperatureSelectValue[$filteringList['temperature']];
+            
+            if($filteredTemperature['produce_an_above_data']){
+                    $whereMsg = 'temperature >=';
+            }else{  $whereMsg = 'temperature <';}
+
+            $dataArray = $dataArray->where([ $whereMsg  => $filteredTemperature['reference_temperature']]); 
+        };
         //bol-symptoms
         foreach(Configure::read('bol_symptoms') as $keySymptom => $symptom  ){
             if($filteringList[$keySymptom]==1){ $dataArray = $dataArray->where([$keySymptom => true]);};
@@ -151,6 +173,37 @@ class DiagnosisController extends AppController
             $dataArray = $dataArray->where(['Diagnosis.department_id'=>$departmentId]);
         }
 
+        //Search for a self-diagnostic table prepared within the date range entered.
+        //Example 1)First Date:2020-09-01   Second Date:2020-09-02 => 2020-09-01 ~ 2020-09-02
+        //Example 2)First Date:null         Second Date:2020-09-01 => 2020-09-01
+        //Example 3)First Date:2020-09-01   Second Date:2019-03-01 => 2019-03-01 ~ 2020-09-01
+        if($filteringList['first_date']!=0||$filteringList['second_date']!=0){
+            if($filteringList['first_date']!=0){ 
+                $firstDate  = new DateTime($filteringList['first_date']);
+                $firstDate = $firstDate->format('Y-m-d H:i:s');
+            }
+            if($filteringList['second_date']!=0){ 
+                $secondDate = new DateTime($filteringList['second_date']);
+                $secondDate = $secondDate->format('Y-m-d H:i:s');
+            }
+
+            if($filteringList['first_date']==0){
+                $firstDate = $secondDate;            }
+            elseif($filteringList['second_date']==0){
+                $secondDate = $firstDate;
+            }
+            elseif($firstDate>$secondDate){
+                $tempDate   = $firstDate;
+                $firstDate  = $secondDate;
+                $secondDate = $tempDate;
+            }
+            
+            $secondDate = new DateTime($secondDate);
+            $secondDate = $secondDate->add(new DateInterval('P1D'))->format('Y-m-d H:i:s');
+            $dataArray  = $dataArray->where(['Diagnosis.created >=' => $firstDate]);
+            $dataArray  = $dataArray->where(['Diagnosis.created <' => $secondDate]);
+            
+        }
         $this->paginate = [
             'contain' => ['Users'],
         ];

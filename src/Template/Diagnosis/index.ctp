@@ -12,31 +12,57 @@ use Cake\Core\Configure\Engine\PhpConfig;
         <!-- This part appears only to the manager.-->
         <div class="center">
         <?php if ($this->request->getSession()->read('Auth.User.department_id')==Configure::read('DEPARTMENT.MANAGER.NUMBER')):?>
+        <?php $filtering = $this->request->getSession()->read('Diagnosis.filtering');?>
         <span id="checkbox">
             <?= $this->Form->create($diagnosis,['url' => ['action' => 'filtering']]);?>
                 <?php foreach(Configure::read('int_symptoms') as $keySymptom => $symptom ):?>
+                <span id="checkbox" class = "from-group">
+                    <?=$symptom['jp']?>
+                </span>
                 <span id="checkbox" class = "form-group">
-                <?= $this->Form->checkbox($keySymptom,['value' => '1','required' => false]);?> <?=$symptom['jp']?>
+                <select id="inline_selectbox" class ="form-control" name=<?=$keySymptom?>>
+                    <option value="0" <?php if($filtering!=null&&$filtering[$keySymptom]==0):?>selected<?php endif;?>>範囲選択</option>
+                    <?php foreach($symptom['select'] as $symptomSelectKey => $symptomSelectValue): ?>
+                    <option value=<?=$symptomSelectValue['NUMBER']?> <?php if($filtering!=null&&$filtering[$keySymptom]==$symptomSelectValue['NUMBER']):?>selected<?php endif;?>><?=$symptomSelectValue['jp']?></option>
+                    <?php endforeach?>
+                </select>
                 </span>
                 <?php endforeach?>
                 <?php foreach(Configure::read('bol_symptoms') as $keySymptom => $symptom ):?>
+                <?=$symptom?>
                 <span id="checkbox" class = "form-group">
-                <?= $this->Form->checkbox($keySymptom,['value' => '1','required' => false]);?> <?=$symptom?>
+                    <input type="hidden" name=<?=$keySymptom?> value="0">
+                    <input type="checkbox" name=<?=$keySymptom?> value="1" <?php if($filtering!=null&&$filtering[$keySymptom]==1):?>checked<?php endif;?>>
                 </span>
                 <?php endforeach?>
                 <span id="checkbox" class = "form-check-inline">
-                <?=$this->Form->radio(
-                    'department_id',
-                    [
-                        ['value' => '0', 'text' => '団体', 'class' => 'form-check-input','checked'=>'checked'],
-                        ['value' => Configure::read('DEPARTMENT.INDIVIDUAL.NUMBER'),     'text' => Configure::read('DEPARTMENT.INDIVIDUAL.jp'), 'label' => ['class' => 'form-check-input']],
-                        ['value' => Configure::read('DEPARTMENT.CORPORATE_BODY.NUMBER'), 'text' => Configure::read('DEPARTMENT.CORPORATE_BODY.jp'), 'label' => ['class' => 'form-check-input']]
-                    ]
-                );?>
-                </span>
+                <label for="department_id">
+                    ｜団体
+                    <input type="radio" name="department_id" class = "form-check-input" value="0" <?php if(($filtering==null)||($filtering!=null && $filtering['department_id']==0)):?>checked<?php endif;?>>
+                </label>
+                <label for="department_id">
+                    個人
+                    <input type="radio" name="department_id" class = "form-check-input"value=<?=Configure::read('DEPARTMENT.INDIVIDUAL.NUMBER')?> <?php if($filtering!=null&&$filtering['department_id']==2):?>checked<?php endif;?>>
+                </label>
+                <label for="department_id">
+                    法人
+                    <input type="radio" name="department_id" class = "form-check-input" value=<?=Configure::read('DEPARTMENT.CORPORATE_BODY.NUMBER')?> <?php if($filtering!=null&&$filtering['department_id']==3):?>checked<?php endif;?>>
+                </label>
+                </span></br>
+                社員番号
                 <span id="checkbox" class = "form-group">
-                    <?= $this->Form->text('user_num',['class'=>'form-control','placeholder'=>'Input the user number']);?>
+                    <input type="text" name="user_num" class="form-control" <?php if($filtering!=null&&$filtering['user_num']!=null):?>value=<?=$filtering['user_num'];?><?php else:?>placeholder="Input the user number"<?php endif ?>>
                 </span>
+                </span>作成期間選択
+                <span style="display:inline-block;" class = "form-group">
+                    <input type="hidden" name="first_date" value="0">
+                    <input type="date" class="form-control" name="first_date" <?php if($filtering!=null&&($filtering['first_date']!=0||$filtering['second_date']!=0)):?>value=<?php if($filtering['first_date']!=0): echo $filtering['first_date'];else: echo $filtering['second_date'];endif;endif;?> max="<?=date('Y-m-d')?>">
+                </span>~
+                <span style="display:inline-block;" calss = "form-group">
+                    <input type="hidden" name="second_date" value="0">
+                    <input type="date" class="form-control" name="second_date" <?php if($filtering!=null&&($filtering['first_date']!=0||$filtering['second_date']!=0)):?>value=<?php if($filtering['second_date']!=0): echo $filtering['second_date'];else: echo $filtering['first_date'];endif;endif;?> max="<?=date('Y-m-d')?>">
+                </span>
+                <span style="display:inline-block;" class = "form-group">
                 <span id="checkbox" class = "form-group">
                     <?= $this->Form->button('フィルタリング',['class'=>'btn btn-success','type'=>'submit']);?>
                 </span>
@@ -108,6 +134,7 @@ use Cake\Core\Configure\Engine\PhpConfig;
                 <td id="width_60px"><?= h($diagno->created) ?></td>
                 <td id="width_60px"><?= h($diagno->modified) ?></td>
                 <!-- action form -->            
+                <!--Form Helper automatically handles tokens for links and post buttons only.-->
                 <td class="actions" id="width_30px">
                     <?= $this->Html->link(__('View'), ['action' => 'view', $diagno->id]) ?>
                     <?= $this->Html->link(__('Edit'), ['action' => 'edit', $diagno->id]) ?>
@@ -122,6 +149,7 @@ use Cake\Core\Configure\Engine\PhpConfig;
     </table>
     <?php if ($this->request->getSession()->read('Auth.User.department_id')==Configure::read('DEPARTMENT.MANAGER.NUMBER')):?>
         <div id="right" class = "form-group">
+        <!--Form Helper automatically handles tokens for links and post buttons only.-->
         <?= $this->Form->postButton('CSVで変換', ['controller' => 'Diagnosis', 'action' => 'export' ],['class'=>'btn btn-secondary']) ?>
         </div>
     <?php endif;?>

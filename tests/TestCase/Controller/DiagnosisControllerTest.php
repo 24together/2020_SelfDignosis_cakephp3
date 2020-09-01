@@ -90,15 +90,17 @@ class DiagnosisControllerTest extends TestCase
         //form input value
         $dummyData = [
             'tiredness'     => 0,
-            'temperature'   => 1,
+            'temperature'   => 2,
             'cough'         => 1,
             'muscle_pain'   => 0,
             'headache'      => 0,
             'diarrhea'      => 0,
             'chest_pain'    => 0,
             'dyspnea'       => 0,
-            'department_id'    => 2, #디폴트가 1
+            'department_id' => 2, #디폴트가 1
             'user_num'      => null,
+            'first_date'    => null,
+            'second_date'   =>'2020-08-10'
         ];
         $this->post('/diagnosis/filtering',$dummyData);
         $this->assertResponseSuccess();
