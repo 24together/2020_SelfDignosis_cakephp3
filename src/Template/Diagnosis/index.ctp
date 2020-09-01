@@ -134,7 +134,7 @@ use Cake\Core\Configure\Engine\PhpConfig;
                 <td id="width_60px"><?= h($diagno->created) ?></td>
                 <td id="width_60px"><?= h($diagno->modified) ?></td>
                 <!-- action form -->            
-                <!--Form Helper automatically handles tokens for links and post buttons only.-->
+                <!--Use form helpers when creating postLinks and postButtons. Because form helper automatically processes tokens for postLinks and postButtons.-->
                 <td class="actions" id="width_30px">
                     <?= $this->Html->link(__('View'), ['action' => 'view', $diagno->id]) ?>
                     <?= $this->Html->link(__('Edit'), ['action' => 'edit', $diagno->id]) ?>
@@ -149,7 +149,7 @@ use Cake\Core\Configure\Engine\PhpConfig;
     </table>
     <?php if ($this->request->getSession()->read('Auth.User.department_id')==Configure::read('DEPARTMENT.MANAGER.NUMBER')):?>
         <div id="right" class = "form-group">
-        <!--Form Helper automatically handles tokens for links and post buttons only.-->
+        <!--Use form helpers when creating postLinks and postButtons. Because form helper automatically processes tokens for postLinks and postButtons.-->
         <?= $this->Form->postButton('CSVで変換', ['controller' => 'Diagnosis', 'action' => 'export' ],['class'=>'btn btn-secondary']) ?>
         </div>
     <?php endif;?>
