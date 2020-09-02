@@ -58,7 +58,7 @@ class DiagnosisController extends AppController
             $this->paginate = [
                 'contain' => ['Users'],
             ];
-            $diagnosis = $this->paginate($data);
+            $diagnosis = $this->paginate($data->order(['created' => 'DESC']));
         }
         
         $this->set(compact('diagnosis'));
@@ -208,7 +208,7 @@ class DiagnosisController extends AppController
             'contain' => ['Users'],
         ];
 
-        $diagnosis = $this->paginate($dataArray);
+        $diagnosis = $this->paginate($dataArray->order(['created' => 'DESC']));
         $session = $this->request->getSession();
         $session->write('Diagnosis.data',$diagnosis);
         $this->set(compact('diagnosis'));
