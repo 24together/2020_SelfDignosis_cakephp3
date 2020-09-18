@@ -14,6 +14,9 @@ use Cake\ORM\TableRegistry;
 
 class DiagnosisController extends AppController
 {
+    const HAVE_POST_DATA    = 1;
+    const NO_POST_DATA      = 0;
+
     public function beforeFilter(Event $event)
     {
         //default deny
@@ -152,8 +155,8 @@ class DiagnosisController extends AppController
         }
         //These are the int-symptoms. 
         //Because the input value varies from symptom to symptom, the code should be changed appropriately if the int symptom changes.
-        if($filteringList['tiredness']!=0)     { $dataArray = $dataArray->where(['tiredness'        => $filteringList['tiredness']]); };
-        if($filteringList['temperature']!=0)   { 
+        if($filteringList['tiredness']!=self::NO_POST_DATA)     { $dataArray = $dataArray->where(['tiredness'        => $filteringList['tiredness']]); };
+        if($filteringList['temperature']!=self::NO_POST_DATA)   { 
             $temperatureSelectValue = Configure::read('int_symptoms.temperature.select');
             $filteredTemperature    = $temperatureSelectValue[$filteringList['temperature']];
             
@@ -165,10 +168,10 @@ class DiagnosisController extends AppController
         };
         //bol-symptoms
         foreach(Configure::read('bol_symptoms') as $keySymptom => $symptom  ){
-            if($filteringList[$keySymptom]==1){ $dataArray = $dataArray->where([$keySymptom => true]);};
+            if($filteringList[$keySymptom]==self::HAVE_POST_DATA){ $dataArray = $dataArray->where([$keySymptom => true]);};
         }
   
-        if($filteringList['department_id']!=0){ 
+        if($filteringList['department_id']!=self::NO_POST_DATA){ 
             $departmentId = (int)$filteringList['department_id'];
             $dataArray = $dataArray->where(['Diagnosis.department_id'=>$departmentId]);
         }
@@ -177,19 +180,19 @@ class DiagnosisController extends AppController
         //Example 1)First Date:2020-09-01   Second Date:2020-09-02 => 2020-09-01 ~ 2020-09-02
         //Example 2)First Date:null         Second Date:2020-09-01 => 2020-09-01
         //Example 3)First Date:2020-09-01   Second Date:2019-03-01 => 2019-03-01 ~ 2020-09-01
-        if($filteringList['first_date']!=0||$filteringList['second_date']!=0){
-            if($filteringList['first_date']!=0){ 
+        if($filteringList['first_date']!=self::NO_POST_DATA||$filteringList['second_date']!=self::NO_POST_DATA){
+            if($filteringList['first_date']!=self::NO_POST_DATA){ 
                 $firstDate  = new DateTime($filteringList['first_date']);
                 $firstDate = $firstDate->format('Y-m-d H:i:s');
             }
-            if($filteringList['second_date']!=0){ 
+            if($filteringList['second_date']!=self::NO_POST_DATA){ 
                 $secondDate = new DateTime($filteringList['second_date']);
                 $secondDate = $secondDate->format('Y-m-d H:i:s');
             }
 
-            if($filteringList['first_date']==0){
+            if($filteringList['first_date']==self::NO_POST_DATA){
                 $firstDate = $secondDate;            }
-            elseif($filteringList['second_date']==0){
+            elseif($filteringList['second_date']==self::NO_POST_DATA){
                 $secondDate = $firstDate;
             }
             elseif($firstDate>$secondDate){
