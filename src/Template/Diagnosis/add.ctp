@@ -24,7 +24,7 @@ use Cake\Core\Configure\Engine\PhpConfig;
         </div>
         <?php foreach(Configure::read('bol_symptoms') as $keySymptom => $symptom) : ?>
         <div class = "form-group">
-            <?= $this->Form->control($keySymptom),['label' =>$symptom]; ?>
+            <?= $this->Form->control($keySymptom,['label' =>$symptom]); ?>
         </div>
         <?php endforeach;?>
     </fieldset>

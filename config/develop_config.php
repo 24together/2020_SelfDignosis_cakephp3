@@ -47,21 +47,27 @@ return [
                 //]
                 1 => [//'nomal_temperature'
                     'NUMBER'                => 1,
-                    'reference_temperature' => 37.5,
-                    'produce_an_above_data' => false,
+                    'reference_temperature' => [ 
+                        'begin' => 0 ,
+                        'end'   => 37.5
+                    ],
                     'jp'                    => '37.5度未満(正常)'
 
                 ],
                 2 => [//'have_beyond_a_slight_fever'
                     'NUMBER'                => 2,
-                    'reference_temperature' => 37.5,
-                    'produce_an_above_data' => true,
+                    'reference_temperature' => [ 
+                        'begin' => 37.5 ,
+                        'end'   => 50
+                    ],
                     'jp'                    => '37.5度(微熱)以上'
                 ],
                 3 =>[//'have_a_high_fever'
                     'NUMBER'                => 3,
-                    'reference_temperature' => 38.5,
-                    'produce_an_above_data' => true,
+                    'reference_temperature' => [ 
+                        'begin' => 38.5,
+                        'end'   => 50
+                    ],
                     'jp'                    => '38.5度(高熱)以上'
 
                 ]

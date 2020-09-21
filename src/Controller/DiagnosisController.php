@@ -160,11 +160,9 @@ class DiagnosisController extends AppController
             $temperatureSelectValue = Configure::read('int_symptoms.temperature.select');
             $filteredTemperature    = $temperatureSelectValue[$filteringList['temperature']];
             
-            if($filteredTemperature['produce_an_above_data']){
-                    $whereMsg = 'temperature >=';
-            }else{  $whereMsg = 'temperature <';}
+            $dataArray = $dataArray->where(['temperature >=' => $filteredTemperature['reference_temperature']['begin']]);
+            $dataArray = $dataArray->where(['temperature <' => $filteredTemperature['reference_temperature']['end']]);
 
-            $dataArray = $dataArray->where([ $whereMsg  => $filteredTemperature['reference_temperature']]); 
         };
         //bol-symptoms
         foreach(Configure::read('bol_symptoms') as $keySymptom => $symptom  ){
@@ -240,7 +238,7 @@ class DiagnosisController extends AppController
                 case Configure::read('DEPARTMENT.CORPORATE_BODY.NUMBER'):
                     $departmentId = Configure::read('DEPARTMENT.CORPORATE_BODY.jp'); break;
             }
-            switch($diagnosis->triedness){
+            switch($diagnosis->tiredness){
                 //Outputs the physical condition corresponding to the fatigue level number.
                 case Configure::read('int_symptoms.tiredness.select.GOOD.NUMBER'):
                     $tiredness = Configure::read('int_symptoms.tiredness.select.GOOD.jp'); break;
