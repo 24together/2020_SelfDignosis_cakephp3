@@ -5,9 +5,18 @@ use App\Controller\AppController;
 use Cake\Event\Event;
 use Cake\Core\Configure;
 use Cake\Core\Configure\Engine\PhpConfig;
+use Cake\I18n\Date;
+use Cake\I18n\Time;
+use DateTime;
+use DatePeriod;
+use DateInterval;
+use Cake\ORM\TableRegistry;
 
 class DiagnosisController extends AppController
 {
+    const HAVE_POST_DATA    = 1;
+    const NO_POST_DATA      = 0;
+
     public function beforeFilter(Event $event)
     {
         //default deny
@@ -52,7 +61,7 @@ class DiagnosisController extends AppController
             $this->paginate = [
                 'contain' => ['Users'],
             ];
-            $diagnosis = $this->paginate($data);
+            $diagnosis = $this->paginate($data->order(['created' => 'DESC']));
         }
         
         $this->set(compact('diagnosis'));
@@ -126,36 +135,81 @@ class DiagnosisController extends AppController
         //The function to filter by symptom, user number, and department.
         $filteringList = $this->request->getData();
         $userNum        = $filteringList['user_num'];
+        
+        $session = $this->request->getSession();
+        $session->write('Diagnosis.filtering',$filteringList);
+
         $dataArray      = array();
         $dataArray = $this->Diagnosis->find('all');
-        if(!empty($userNum)){
+        if($userNum!=null){
             //If user information is entered
-            $userExists = $this->Users->exists(['Users.user_num'=>$userNum]);
+            $Users = TableRegistry::get('Users');
+
+            $userExists = $Users->exists(['Users.user_num'=>$userNum]);
             if($userExists){
-                $userData   = $this->Users->find('all')->where(['user_num'=>$userNum])->first();
-                $userId    = $userData->id;
-                $dataArray  = $this->where(['Diagnosis.user_id'=>$userId]);
+                $userData   = $Users->find('all')->where(['user_num'=>$userNum])->first();
+                $userId     = $userData->id;
+                $dataArray  = $dataArray->where(['Diagnosis.user_id'=>$userId]);
                 
-            }
+            }else {$this->Flash->error(__('Please check the user number again.'));}
         }
-        //These are the int-symptoms. When additional functions are developed later, the lines will be changed.
-        if($filteringList['tiredness']==1)     { $dataArray = $dataArray->where(['tiredness' => Configure::read('int_symptoms.tiredness.select.BAD.NUMBER')]); };
-        if($filteringList['temperature']==1)   { $dataArray = $dataArray->where(['temperature >=' => Configure::read('int_symptoms.temperature.FEVER_TEMPERATURE')]); };
+        //These are the int-symptoms. 
+        //Because the input value varies from symptom to symptom, the code should be changed appropriately if the int symptom changes.
+        if($filteringList['tiredness']!=self::NO_POST_DATA)     { $dataArray = $dataArray->where(['tiredness'        => $filteringList['tiredness']]); };
+        if($filteringList['temperature']!=self::NO_POST_DATA)   { 
+            $temperatureSelectValue = Configure::read('int_symptoms.temperature.select');
+            $filteredTemperature    = $temperatureSelectValue[$filteringList['temperature']];
+            
+            $dataArray = $dataArray->where(['temperature >=' => $filteredTemperature['reference_temperature']['begin']]);
+            $dataArray = $dataArray->where(['temperature <' => $filteredTemperature['reference_temperature']['end']]);
+
+        };
         //bol-symptoms
         foreach(Configure::read('bol_symptoms') as $keySymptom => $symptom  ){
-            if($filteringList[$keySymptom]==1){ $dataArray = $dataArray->where([$keySymptom => true]);};
+            if($filteringList[$keySymptom]==self::HAVE_POST_DATA){ $dataArray = $dataArray->where([$keySymptom => true]);};
         }
   
-        if($filteringList['department_id']!=0){ 
+        if($filteringList['department_id']!=self::NO_POST_DATA){ 
             $departmentId = (int)$filteringList['department_id'];
             $dataArray = $dataArray->where(['Diagnosis.department_id'=>$departmentId]);
         }
 
+        //Search for a self-diagnostic table prepared within the date range entered.
+        //Example 1)First Date:2020-09-01   Second Date:2020-09-02 => 2020-09-01 ~ 2020-09-02
+        //Example 2)First Date:null         Second Date:2020-09-01 => 2020-09-01
+        //Example 3)First Date:2020-09-01   Second Date:2019-03-01 => 2019-03-01 ~ 2020-09-01
+        if($filteringList['first_date']!=self::NO_POST_DATA||$filteringList['second_date']!=self::NO_POST_DATA){
+            if($filteringList['first_date']!=self::NO_POST_DATA){ 
+                $firstDate  = new DateTime($filteringList['first_date']);
+                $firstDate = $firstDate->format('Y-m-d H:i:s');
+            }
+            if($filteringList['second_date']!=self::NO_POST_DATA){ 
+                $secondDate = new DateTime($filteringList['second_date']);
+                $secondDate = $secondDate->format('Y-m-d H:i:s');
+            }
+
+            if($filteringList['first_date']==self::NO_POST_DATA){
+                $firstDate = $secondDate;            }
+            elseif($filteringList['second_date']==self::NO_POST_DATA){
+                $secondDate = $firstDate;
+            }
+            elseif($firstDate>$secondDate){
+                $tempDate   = $firstDate;
+                $firstDate  = $secondDate;
+                $secondDate = $tempDate;
+            }
+            
+            $secondDate = new DateTime($secondDate);
+            $secondDate = $secondDate->add(new DateInterval('P1D'))->format('Y-m-d H:i:s');
+            $dataArray  = $dataArray->where(['Diagnosis.created >=' => $firstDate]);
+            $dataArray  = $dataArray->where(['Diagnosis.created <' => $secondDate]);
+            
+        }
         $this->paginate = [
             'contain' => ['Users'],
         ];
 
-        $diagnosis = $this->paginate($dataArray);
+        $diagnosis = $this->paginate($dataArray->order(['created' => 'DESC']));
         $session = $this->request->getSession();
         $session->write('Diagnosis.data',$diagnosis);
         $this->set(compact('diagnosis'));
@@ -184,7 +238,7 @@ class DiagnosisController extends AppController
                 case Configure::read('DEPARTMENT.CORPORATE_BODY.NUMBER'):
                     $departmentId = Configure::read('DEPARTMENT.CORPORATE_BODY.jp'); break;
             }
-            switch($diagnosis->triedness){
+            switch($diagnosis->tiredness){
                 //Outputs the physical condition corresponding to the fatigue level number.
                 case Configure::read('int_symptoms.tiredness.select.GOOD.NUMBER'):
                     $tiredness = Configure::read('int_symptoms.tiredness.select.GOOD.jp'); break;
